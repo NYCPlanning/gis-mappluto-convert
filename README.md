@@ -11,7 +11,7 @@ A version of Python 2/3 with the default ArcPy installation that comes with ArcG
 ##### MapPLUTOCSV2FC_Conversion.py
 
 ```
-arcpy, os, pandas, timeit, shutil, datetime, configparser
+arcpy, os, pandas, timeit, shutil, datetime, configparser, sys, traceback
 ```
 
 ### Instructions for running
