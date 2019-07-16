@@ -190,23 +190,6 @@ try:
                    "pfirm15_flag": ["PFIRM15_FLAG", "TEXT", "", "", 1, "PFIRM15_FLAG", True],
                    "version": ["Version", "TEXT", "", "", 6, "Version", True]}
 
-    # No longer desire the following fields in output but they are typically present in static csv inputs
-    # Keeping this dictionary fragment in script, for now, in case we begin utilizing these fields again:
-
-    '''
-                   "mappluto_f": ["MAPPLUTO_F", "SHORT", "", "", "", "MAPPLUTO_F", True],
-                   "rpaddate": ["RPADDate", "TEXT", "", "", "", "RPADDate", True],
-                   "dcasdate": ["DCASDate", "TEXT", "", "", "", "DCASDate", True],
-                   "zoningdate": ["ZoningDate", "TEXT", "", "", "", "ZoningDate", True],
-                   "landmkdate": ["LandmkDate", "TEXT", "", "", "", "LandmkDate", True],
-                   "basempdate": ["BaseMpDate", "TEXT", "", "", "", "BaseMpDate", True],
-                   "masdate": ["MASDate", "TEXT", "", "", "", "MASDate", True],
-                   "polidate": ["PoliDate", "TEXT", "", "", "", "PoliDate", True],
-                   "edesigdate": ["EDesigDate", "TEXT", "", "", "", "", True]}
-    '''
-
-    # Commenting everything below except last step to try and fix final output to match current standard
-
     print("Writing schema.ini used to properly import output csv into ESRI format with correct data types.")
 
     # Generate list of fields and field indices for potential troubleshooting
@@ -234,8 +217,6 @@ try:
     f.write("[" + str(output_csv.split("\\")[-1]) + "]\n")
 
     converter_dict = {}
-
-    # Write proper data types to schema text file based on schema dictionary assignments
 
     # Write proper data type assignment to converter dictionary to be used to read static
     # csv into pandas dataframe with correct dtypes
