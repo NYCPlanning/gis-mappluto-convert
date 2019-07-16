@@ -69,6 +69,7 @@ try:
     fgdb_path = config.get('PATHS', 'fgdb_path')
     gdb_path_water_area = config.get('PATHS', 'gdb_path_water_area')
     gdb_path_shoreline_clip = config.get('PATHS', 'gdb_path_shoreline_clip')
+    x_path = config.get('PATHS', 'x_path')
 
     tax_lot_in = os.path.join(gdb_path_water_area, 'Join_File_Dissolve')
     blank_table = "MapPLUTO_final"
@@ -485,6 +486,63 @@ try:
         print("Generating DBF table.")
         apy.TableSelect_analysis(os.path.join(gdb_path_water_area, blank_table), 'UNMAPPABLES', '"PLUTOMapID" = \'2\'')
 
+    # Outputting final results to X: drive location
+
+    x_version_path = os.path.join(x_path, version)
+    if os.path.isdir(x_version_path):
+        print("Output version directory exists. Skipping")
+    else:
+        print("Output version directory does not exist. Creating now.")
+        os.mkdir(x_version_path)
+
+    x_output_gdb_path = os.path.join(x_version_path, 'output')
+
+    apy.Copy_management(os.path.join(fgdb_path, 'MapPLUTO_WaterArea.gdb'),
+                        os.path.join(x_output_gdb_path, 'MapPLUTO_WaterArea_{}.gdb'.format(today)))
+    print("Outputting new MapPLUTO_ShorelineClip")
+    apy.Copy_management(os.path.join(fgdb_path, 'MapPLUTO_ShorelineClip.gdb'),
+                        os.path.join(x_output_gdb_path, 'MapPLUTO_ShorelineClip_{}.gdb'.format(today)))
+    print("Outputs complete")
+
+    retain_files = ['MapPLUTO_{}_Shoreline_ClippedProj'.format(today), 'MapPLUTO_{}_Water_IncludedProj'.format(today),
+                    'UNMAPPABLES', 'MapPLUTO', 'MapPLUTO_UNCLIPPED', 'NOT_MAPPED_LOTS_UNCLIPPED', 'NOT_MAPPED_LOTS']
+
+    print("Modifying outputs to include only desired files")
+    apy.env.workspace = x_output_gdb_path
+    for out_gdb_path in apy.ListWorkspaces():
+        if today in out_gdb_path:
+            apy.env.workspace = out_gdb_path
+            output_fc_list = apy.ListFeatureClasses()
+            output_table_list = apy.ListTables()
+            for fc in output_fc_list:
+                if fc not in retain_files:
+                    print("Deleting {}".format(fc))
+                    apy.Delete_management(fc)
+                if 'Proj' in fc and 'Shoreline' in fc:
+                    print("Renaming {0} to {1}.".format(fc,
+                                                        fc.replace("_{}_Shoreline_ClippedProj".format(today), "")))
+                    apy.Rename_management(fc, fc.replace("_{}_Shoreline_ClippedProj".format(today), ""))
+                if 'Proj' in fc and 'Water' in fc:
+                    print("Renaming {0} to {1}.".format(fc, fc.replace("_{}_Water_IncludedProj".format(today),
+                                                                       "_UNCLIPPED")))
+                    apy.Rename_management(fc, fc.replace("_{}_Water_IncludedProj".format(today), "_UNCLIPPED"))
+            output_fc_list = apy.ListFeatureClasses()
+            print("---" + str(output_fc_list))
+            for tbl in output_table_list:
+                if 'unclipped' in out_gdb_path or 'UNCLIPPED' in output_fc_list[0]:
+                    if tbl not in retain_files:
+                        print("Deleting {}".format(tbl))
+                        apy.Delete_management(tbl)
+                    else:
+                        print("Renaming {}".format(tbl))
+                        apy.Rename_management(tbl, "NOT_MAPPED_LOTS_UNCLIPPED.dbf")
+                else:
+                    if tbl not in retain_files:
+                        print("Deleting {}".format(tbl))
+                        apy.Delete_management(tbl)
+                    else:
+                        print("Renaming {}".format(tbl))
+                        apy.Rename_management(tbl, "NOT_MAPPED_LOTS.dbf")
 
     print("Script complete. Finished in " + str((timeit.default_timer() - start_time)/60) + " minutes.")
 
