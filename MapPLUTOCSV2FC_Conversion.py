@@ -44,7 +44,7 @@ try:
     # Set configuration file for defining path and credential information
     print("Parsing configuration file")
     config = configparser.ConfigParser()
-    config.read(r'G:\SCRIPTS\MapPLUTO_Conversion\ini\mappluto_convert_config.ini')
+    config.read(r'mappluto_convert_sample_config.ini')
 
     # Open log file for outputting start-time, end-time, and uploaded datasets
     print("Assigning log path")
