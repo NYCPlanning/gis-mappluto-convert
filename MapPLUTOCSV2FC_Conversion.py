@@ -71,7 +71,7 @@ try:
     gdb_path_shoreline_clip = config.get('PATHS', 'gdb_path_shoreline_clip')
     x_path = config.get('PATHS', 'x_path')
 
-    tax_lot_in = os.path.join(gdb_path_water_area, 'Join_File_Dissolve')
+    tax_lot_in = os.path.join(gdb_path_water_area, 'Join_File')
     blank_table = "MapPLUTO_final"
     csv_table = "MapPLUTO_intermediary"
     lyr_name = "MapPlutoSpatialLayer"
@@ -349,23 +349,6 @@ try:
     elif join_hit_count == 1:
         print("Join file exists. Skipping")
 
-    # Check for dissolved polygon in gdb, if it exists, continue, if not, create it.
-
-    gdb_dissolve_check_list = apy.ListFeatureClasses()
-
-    for file in gdb_dissolve_check_list:
-        if "Dissolve" in file:
-            print("Dissolved Join file present in GDB. Continuing")
-            dissolve_hit_count += 1
-
-    if dissolve_hit_count == 0:
-        print("Dissolved join file not present in GDB. Creating it now.")
-        apy.Dissolve_management(os.path.join(gdb_path_water_area, "Join_File"),
-                                os.path.join(gdb_path_water_area, tax_lot_in),
-                                'BBL')
-    elif dissolve_hit_count == 1:
-        print("Join Dissolve file exists. Skipping")
-
     # Join in-memory datasets and export to a new FeatureClass -- ShorelineNotClipped
 
     join_fields = apy.ListFields(tax_lot_in)
@@ -448,15 +431,6 @@ try:
     print("Adding index to Water Included")
     apy.AddIndex_management(os.path.join(gdb_path_water_area, out_fc), 'BBL', 'BBL_Water', 'UNIQUE')
 
-    print("Setting coordinate reference system to NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet")
-    LionFeatureClass = config.get('PATHS', 'lion_feature_class')
-    lion_desc = apy.Describe(LionFeatureClass)
-    lion_sr = lion_desc.spatialReference
-    print("Setting coord system for Water Included")
-    apy.Project_management(os.path.join(gdb_path_water_area, out_fc),
-                           os.path.join(gdb_path_water_area, out_fc + "Proj"),
-                           lion_sr)
-
     # Create shoreline clipped version of FC
 
     apy.env.workspace = gdb_path_shoreline_clip
@@ -472,12 +446,6 @@ try:
     apy.AddIndex_management(os.path.join(gdb_path_shoreline_clip, out_fc.replace("Water_Included", "Shoreline_Clipped")), 'BBL',
                             'BBL_Shore', 'UNIQUE')
     print("Attribute indices added to BBL fields")
-
-    print("Setting coord system for Shoreline Clipped")
-    apy.Project_management(os.path.join(gdb_path_shoreline_clip, out_fc.replace("Water_Included", "Shoreline_Clipped")),
-                           os.path.join(gdb_path_shoreline_clip, out_fc.replace("Water_Included", "Shoreline_Clipped") + "Proj"),
-                           lion_sr)
-    print("Coord systems set.")
 
     apy.env.workspace = gdb_path_shoreline_clip
     if apy.Exists('UNMAPPABLES'):
@@ -496,15 +464,15 @@ try:
         os.mkdir(x_version_path)
 
     x_output_gdb_path = os.path.join(x_version_path, 'output')
-
+    print("Outputting MapPLUTO_WaterArea_Included")
     apy.Copy_management(os.path.join(fgdb_path, 'MapPLUTO_WaterArea.gdb'),
                         os.path.join(x_output_gdb_path, 'MapPLUTO_WaterArea_{}.gdb'.format(today)))
-    print("Outputting new MapPLUTO_ShorelineClip")
+    print("Outputting new MapPLUTO_Shoreline_Clippped")
     apy.Copy_management(os.path.join(fgdb_path, 'MapPLUTO_ShorelineClip.gdb'),
                         os.path.join(x_output_gdb_path, 'MapPLUTO_ShorelineClip_{}.gdb'.format(today)))
     print("Outputs complete")
 
-    retain_files = ['MapPLUTO_{}_Shoreline_ClippedProj'.format(today), 'MapPLUTO_{}_Water_IncludedProj'.format(today),
+    retain_files = ['MapPLUTO_{}_Shoreline_Clipped'.format(today), 'MapPLUTO_{}_Water_Included'.format(today),
                     'UNMAPPABLES', 'MapPLUTO', 'MapPLUTO_UNCLIPPED', 'NOT_MAPPED_LOTS_UNCLIPPED', 'NOT_MAPPED_LOTS']
 
     print("Modifying outputs to include only desired files")
@@ -518,14 +486,6 @@ try:
                 if fc not in retain_files:
                     print("Deleting {}".format(fc))
                     apy.Delete_management(fc)
-                if 'Proj' in fc and 'Shoreline' in fc:
-                    print("Renaming {0} to {1}.".format(fc,
-                                                        fc.replace("_{}_Shoreline_ClippedProj".format(today), "")))
-                    apy.Rename_management(fc, fc.replace("_{}_Shoreline_ClippedProj".format(today), ""))
-                if 'Proj' in fc and 'Water' in fc:
-                    print("Renaming {0} to {1}.".format(fc, fc.replace("_{}_Water_IncludedProj".format(today),
-                                                                       "_UNCLIPPED")))
-                    apy.Rename_management(fc, fc.replace("_{}_Water_IncludedProj".format(today), "_UNCLIPPED"))
             output_fc_list = apy.ListFeatureClasses()
             print("---" + str(output_fc_list))
             for tbl in output_table_list:
